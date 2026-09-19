@@ -58,10 +58,14 @@ jobs:
       - name: Create temp AIDLC project
         run: |
           set -e
+          rm -rf /tmp/smoke-target
           mkdir -p /tmp/smoke-target/aidlc/spaces/default
-          git -C /tmp/smoke-target init -q
-          echo "# smoke" > /tmp/smoke-target/README.md
-          git -C /tmp/smoke-target -c user.email=a@b -c user.name=ci commit -qam init
+          cd /tmp/smoke-target
+          git init -q
+          git -c user.email=a@b -c user.name=ci checkout -q -b main
+          echo "# smoke" > README.md
+          git add -A
+          git -c user.email=a@b -c user.name=ci commit -qm init
 
       - name: Run install-aidlc-switch-harness.sh
         run: |

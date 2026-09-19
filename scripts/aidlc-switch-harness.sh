@@ -228,6 +228,7 @@ emit_audit_diagnostic() {
     echo ""
 }
 
+ACTIVE_INTENT=""
 ACTIVE_INTENT_FILE="aidlc/spaces/default/intents/active-intent"
 STATE_FILE=""
 
