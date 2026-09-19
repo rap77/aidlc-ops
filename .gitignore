@@ -1,0 +1,12 @@
+# Editor / OS noise
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Shell lint artifacts
+*.sh.check
+shellcheck-*.txt
+
+# Local testing artifacts
+/tmp-aidlc-test/
