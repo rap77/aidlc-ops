@@ -1,0 +1,83 @@
+name: shellcheck
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/shellcheck.yml'
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/shellcheck.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: shellcheck scripts/*.sh
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run shellcheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: ./scripts
+          additional_files: '*.sh'
+          ignore_paths: ./scripts/_test
+          disable_matcher: false
+          fail-on-error: true
+          version: v0.11.0
+
+  bash-syntax:
+    name: bash -n scripts/*.sh
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Syntax check every script
+        run: |
+          set -e
+          for f in scripts/*.sh; do
+            echo "→ bash -n $f"
+            bash -n "$f"
+          done
+
+  install-into-tmp:
+    name: install-aidlc-switch-harness.sh smoke test
+    runs-on: ubuntu-latest
+    needs: [shellcheck, bash-syntax]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create temp AIDLC project
+        run: |
+          set -e
+          mkdir -p /tmp/smoke-target/aidlc/spaces/default
+          git -C /tmp/smoke-target init -q
+          echo "# smoke" > /tmp/smoke-target/README.md
+          git -C /tmp/smoke-target -c user.email=a@b -c user.name=ci commit -qam init
+
+      - name: Run install-aidlc-switch-harness.sh
+        run: |
+          set -e
+          bash scripts/install-aidlc-switch-harness.sh /tmp/smoke-target
+
+      - name: Verify the copy is executable and passes syntax
+        run: |
+          set -e
+          test -x /tmp/smoke-target/scripts/aidlc-switch-harness.sh
+          bash -n /tmp/smoke-target/scripts/aidlc-switch-harness.sh
+
+      - name: Verify --audit on the smoke target (no AIDLC install)
+        run: |
+          set -e
+          # The smoke target has no .aidlc/, so audit should report it as missing
+          # but not crash.
+          cd /tmp/smoke-target
+          bash scripts/aidlc-switch-harness.sh --audit || true

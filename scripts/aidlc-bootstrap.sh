@@ -134,7 +134,6 @@ print_report() {
     echo ""
 
     # Render findings grouped by section, fixed order: System, Project, AIDLC, Warnings, Other.
-    declare -A section_order=( [SYSTEM]=1 [PROJECT]=2 [AIDLC]=3 [WARN]=4 [OTHER]=5 )
     local prev_section="" current_label=""
     for f in "${FINDINGS[@]}"; do
         local sev="${f%%§*}"
@@ -200,14 +199,12 @@ if [[ -n "$AIDLC_BIN" ]]; then
     fi
 fi
 
-# Common deps.
-for tool in git; do
-    if command -v "$tool" >/dev/null 2>&1; then
-        add OK "SYSTEM:$tool present"
-    else
-        add FAIL "SYSTEM:$tool NOT installed (required by AIDLC)"
-    fi
-done
+# Common deps. We only require git today; extend this list as AIDLC grows.
+if command -v git >/dev/null 2>&1; then
+    add OK "SYSTEM:git present"
+else
+    add FAIL "SYSTEM:git NOT installed (required by AIDLC)"
+fi
 
 # ---- project audit ---------------------------------------------------------
 
@@ -279,9 +276,7 @@ else
 fi
 
 # Gitignore managed block.
-GITIGNORE_HAS_BLOCK=0
 if [[ -f "$PROJECT_ROOT/.gitignore" ]] && grep -q "# BEGIN AI-DLC:gitignore" "$PROJECT_ROOT/.gitignore" 2>/dev/null; then
-    GITIGNORE_HAS_BLOCK=1
     add OK "AIDLC:.gitignore has the BEGIN AI-DLC:gitignore managed block"
 else
     add WARN "AIDLC:.gitignore does NOT have the BEGIN AI-DLC:gitignore managed block"
